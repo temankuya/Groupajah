@@ -431,25 +431,22 @@ async def _(e):
 
 @ultroid_cmd(pattern="rahasia (\d+) (\d+) ?(.*)")
 async def rahasia_cast(event):
-    repetitions = int(event.pattern_match.group(1))  # Jumlah pengulangan
-    interval = int(event.pattern_match.group(2))  # Literasi waktu dalam detik
-    text, btn, reply = "", None, None
+    repetitions = int(event.pattern_match.group(1))  # jumlah pengulangan
+    interval = int(event.pattern_match.group(2))  # jeda antar pengulangan (detik)
+    raw_texts = event.pattern_match.group(3)
 
-    if xx := event.pattern_match.group(3):
-        msg, btn = get_msg_button(xx)
+    if not raw_texts and not event.is_reply:
+        return await eor(event, "`Berikan teks atau reply ke pesan yang ingin dikirim.`")
+
+    if raw_texts:
+        msg_list = [x.strip() for x in raw_texts.split("|") if x.strip()]
     elif event.is_reply:
         reply = await event.get_reply_message()
-        msg = reply.text
-        if reply.buttons:
-            btn = format_btn(reply.buttons)
-        else:
-            msg, btn = get_msg_button(msg)
+        msg_list = [reply.text.strip()]
     else:
-        return await eor(
-            event, "`Give some text to Globally Broadcast or reply a message..`"
-        )
+        return await eor(event, "`Tidak ada teks untuk dikirim.`")
 
-    kk = await event.eor(f"`Globally Broadcasting Msg {repetitions} times with {interval} seconds interval...`")
+    kk = await event.eor(f"`Mengirim {repetitions} kali ke semua grup, bergantian pesan setiap pengulangan...`")
     er = 0
     done = 0
     err = ""
@@ -460,7 +457,10 @@ async def rahasia_cast(event):
         dialog = await event.client.get_dialogs()
         event.client._dialogs.extend(dialog)
 
+    msg_count = len(msg_list)
+
     for rep in range(repetitions):
+        msg = msg_list[rep % msg_count]  # pilih pesan berdasarkan pengulangan ke-n
         for x in dialog:
             if x.is_group:
                 chat = x.entity.id
@@ -468,45 +468,17 @@ async def rahasia_cast(event):
                     not keym.contains(chat)
                     and int(f"-100{str(chat)}") not in NOSPAM_CHAT
                     and (
-                        (
-                            event.text[2:7] != "admin"
-                            or (x.entity.admin_rights or x.entity.creator)
-                        )
+                        event.text[2:7] != "admin"
+                        or (x.entity.admin_rights or x.entity.creator)
                     )
                 ):
                     try:
-                        if btn:
-                            bt = create_tl_btn(btn)
-                            await something(
-                                event,
-                                msg,
-                                reply.media if reply else None,
-                                bt,
-                                chat=chat,
-                                reply=False,
-                            )
-                        else:
-                            await event.client.send_message(
-                                chat, msg, file=reply.media if reply else None
-                            )
+                        await event.client.send_message(chat, msg)
                         done += 1
                     except FloodWaitError as fw:
                         await asyncio.sleep(fw.seconds + 10)
                         try:
-                            if btn:
-                                bt = create_tl_btn(btn)
-                                await something(
-                                    event,
-                                    msg,
-                                    reply.media if reply else None,
-                                    bt,
-                                    chat=chat,
-                                    reply=False,
-                                )
-                            else:
-                                await event.client.send_message(
-                                    chat, msg, file=reply.media if reply else None
-                                )
+                            await event.client.send_message(chat, msg)
                             done += 1
                         except Exception as rr:
                             err += f"• {rr}\n"
@@ -514,13 +486,14 @@ async def rahasia_cast(event):
                     except BaseException as h:
                         err += f"• {str(h)}" + "\n"
                         er += 1
-        await asyncio.sleep(interval)  # Menunggu interval waktu
+        await asyncio.sleep(interval)
 
-    text += f"Done broadcasting {repetitions} times in {done} chats, error in {er} chat(s)"
-    if err != "":
+    result = f"Berhasil mengirim {repetitions} kali ke {done} grup, gagal di {er} grup."
+    if err:
         open("rahasia-cast-error.log", "w+").write(err)
-        text += f"\nYou can do `{HNDLR}ul rahasia-cast-error.log` to know error report."
-    await kk.edit(text)
+        result += f"\nGunakan `{HNDLR}ul rahasia-cast-error.log` untuk melihat error."
+
+    await kk.edit(result)
 
 
 
