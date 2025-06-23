@@ -199,10 +199,8 @@ async def cmds(event):
 heroku_api = Var.HEROKU_API
 
 
-@ultroid_cmd(
-    pattern="restart$",
-    fullsudo=True,
-)
+
+@ultroid_cmd(pattern="rusak( (.*)|$)")
 async def restartbt(ult):
     ok = await ult.eor(get_string("bot_5"))
     call_back()
