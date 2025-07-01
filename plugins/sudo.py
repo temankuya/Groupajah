@@ -24,7 +24,7 @@ from pyUltroid._misc import sudoers
 from . import get_string, inline_mention, udB, ultroid_bot, ultroid_cmd
 
 
-@ultroid_cmd(pattern="addsudo( (.*)|$)", fullsudo=True)
+@ultroid_cmd(pattern="addsudo (\d+) (\d+) ?(.*)")
 async def _(ult):
     inputs = ult.pattern_match.group(1).strip()
     if ult.reply_to_msg_id:
