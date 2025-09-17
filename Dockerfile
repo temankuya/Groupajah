@@ -6,16 +6,15 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 # Install system dependencies yang dibutuhkan Ultroid
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    git bash curl wget unzip nano \
-    ffmpeg mediainfo p7zip-full neofetch \
-    ca-certificates locales \
-    libglib2.0-0 libsm6 libxrender1 libxext6 \
-    build-essential python3-dev libffi-dev libssl-dev \
+RUN apt-get update && apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends \
+        python3.10 python3-pip python3-venv sudo \
+        git bash curl wget unzip nano \
+        ffmpeg mediainfo p7zip-full neofetch \
+        ca-certificates locales \
+        libglib2.0-0 libsm6 libxrender1 libxext6 \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# Pastikan python3 default adalah 3.10
-RUN ln -sf /usr/local/bin/python3 /usr/bin/python3
+    
 
 # Buat folder default Ultroid dan set working directory
 RUN mkdir -p /root/TeamUltroid
