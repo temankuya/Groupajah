@@ -1,20 +1,31 @@
-# Ultroid - UserBot
-# Copyright (C) 2021-2025 TeamUltroid
-# This file is a part of < https://github.com/TeamUltroid/Ultroid/ >
-# PLease read the GNU Affero General Public License in <https://www.github.com/TeamUltroid/Ultroid/blob/main/LICENSE/>.
+# Ultroid - UserBot (Custom Build with installer.sh)
+FROM python:3.11-slim
 
-FROM theteamultroid/ultroid:main
-
-# set timezone
+# Set timezone
 ENV TZ=Asia/Kolkata
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-COPY installer.sh .
+# Install dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git ffmpeg mediainfo neofetch curl sudo \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN bash installer.sh
+# Copy installer script
+WORKDIR /root
+COPY installer.sh installer.sh
+RUN chmod +x installer.sh
 
-# changing workdir
-WORKDIR "/root/TeamUltroid"
+# Jalankan installer (clone + install deps + pip install)
+RUN bash installer.sh --dir=/root/TeamUltroid --branch=main --env-file=.env --no-root
 
-# start the bot.
+# Copy .env ke container (biar bot langsung jalan)
+COPY .env /root/TeamUltroid/.env
+
+# Set workdir ke repo Ultroid
+WORKDIR /root/TeamUltroid
+
+# Expose port (kalau bot ada webpanel)
+EXPOSE 8080
+
+# Start Ultroid
 CMD ["bash", "startup"]
